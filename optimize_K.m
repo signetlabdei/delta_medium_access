@@ -22,10 +22,10 @@ clearvars
 Ks = 4 : 2 : 120;
 epsilon = 0.05;
 M = 100;
-nodes = 0;
+nodes = 1;
 if (nodes == 1)
     Ns = 4 : 2 : 50;
-    lambdas = 0.025;
+    lambdas = 0.015;
 else
     lambdas = 0.001 : 0.001 : 0.04;
     Ns = 20;
@@ -43,7 +43,7 @@ pessimistic_probs = zeros(length(Ns), length(lambdas), length(Ks));
 
 % Iterate over parameters
 for in = 1 : length(Ns)
-    N = Ns(in);
+    N = Ns(in)
     for il = 1 : length(lambdas)
         lambda = lambdas(il) / N * 20;
         for id = 1 : length(Ks)

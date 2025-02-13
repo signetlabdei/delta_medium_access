@@ -1,12 +1,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                         %
-%                   script: montecarlo_imperfect_runner                   %
+%                     script: montecarlo_noisy_runner                     %
 %           author: Federico Chiariotti (chiariot@dei.unipd.it)           %
 %                             license: GPLv3                              %
 %                                                                         %
 %                                                                         %
 %                                                                         %
-% Runs a Monte Carlo simulation with the desired protocol                 %
+% Runs a Monte Carlo simulation with the desired protocol, using a noisy  %
+% feedback channel model.                                                 %
 %                                                                         %
 % Parameters:                                                             %
 % -L:           the number of steps to simulate per episode [scalar]      %
@@ -19,7 +20,7 @@
 % -p1:          alpha for ZW/GZW/LZW [scalar]                             %
 % -p2:          beta for GZW/LZW [scalar]                                 %
 % -M:           the maximum AoII [scalar]                                 %
-% -sigmas:      the feedback error probabilities                          %
+% -sigmas:      the feedback error variances                              %
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -29,15 +30,17 @@ clearvars
 %%% PARAMETERS
 N = 20;
 L = 1e5 + 1000;
-E = 10;
+E = 20;
 K = 50;
-sigmas = 0 : 0.02 : 0.2;
-lambda = 0.025;
+rho = 0.3;
 epsilon = 0.05;
 algo = 'delta';
 M = 100;
-p1 = 1;
+p1 = 0.65;
 p2 = 0.2;
+
+sigmas = 0 : 0.25 : 5;
+
 
 % Auxiliary vectors for CDFs
 aois = zeros(length(sigmas), M + 1);
@@ -45,10 +48,11 @@ max_aois = zeros(length(sigmas), M + 1);
 aoiis = zeros(length(sigmas), M + 1);
 
 for is = 1 : length(sigmas)
-    sigma = sigmas(is);
+    sigma = sigmas(is)
     for e = 1 : E
         % Run Monte Carlo simulation and compute CDF (skipping first 1000 steps)
-        [aoi, aoii] = montecarlo_imperfect(L, N, ones(1, N) * lambda, epsilon, sigma, algo, K, p1, p2);
+        lambdas = ones(1, N) * rho / N;
+        [aoi, aoii] = montecarlo_noisy(L, N, lambdas, epsilon, sigma, algo, K, p1, p2);
         aoi = aoi(:, 1001 : L);
         aoii = aoii(:, 1001 : L);
         [aoi_dist, ~] = hist(aoi(:), 0 : M);

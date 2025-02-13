@@ -18,7 +18,7 @@
 % -p1:          alpha for ZW/GZW/LZW [scalar]                             %
 % -p2:          beta for GZW/LZW [scalar]                                 %
 % -M:           the maximum AoII [scalar]                                 %
-% -nodes:       0 for simulating over lambda, 1 for simulating over N     %
+% -setting:     0 for simulating over rho, 1 over N, 2 over nu            %
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -29,33 +29,53 @@ clearvars
 epsilons = 0.05;
 algo = 'delta';
 M = 100;
-L = 1e5 + 1000;
-K = 50;
-p1 = 1;
-p2 = 0.2;
+L = 5e6 + 1000;
+Kf = 5 / 2;
+p1 = 0.17;
+p2 = 0.13;
 
-nodes = 0;
-if (nodes == 1)
-    Ns = 4 : 2 : 50;
-    lambdas = 0.025;
-else
-    lambdas = 0.001 : 0.001 : 0.04;
+setting = 1;
+
+% Iterate over rho
+if (setting == 0)
+    rhos = 0.02 : 0.02 : 0.6;
+    nus = 0;
     Ns = 20;
 end
 
+% Iterate over N
+if (setting == 1)
+    Ns = 4 : 2 : 50;
+    nus = zeros(1, length(Ns));
+    rhos = 0.5;
+end
+
+% Iterate over nu
+if (setting == 2)
+    nus = 0 : 0.05 : 0.5;
+    Ns = ones(1, length(nus)) * 20;
+    rhos = 0.5;
+end
+
 % Auxiliary vectors for CDFs
-aois = zeros(length(Ns), length(lambdas), length(epsilons), M + 1);
-max_aois = zeros(length(Ns), length(lambdas), length(epsilons), M + 1);
-aoiis = zeros(length(Ns), length(lambdas), length(epsilons), M + 1);
+aois = zeros(length(Ns), length(rhos), length(epsilons), M + 1);
+max_aois = zeros(length(Ns), length(rhos), length(epsilons), M + 1);
+aoiis = zeros(length(Ns), length(rhos), length(epsilons), M + 1);
 
 % Loop over parameters
 for in = 1 : length(Ns)
-    N = Ns(in);
-    for il = 1 : length(lambdas)
-        lambda = lambdas(il) / N * 20
+    N = Ns(in)
+    nu = nus(in)
+    for il = 1 : length(rhos)
+        lambda = rhos(il) / N
+        K = N * Kf;
+        K = best_pessimistic(in);
+        % p1 = p1s(in);
+        % p2 = p2s(in);
         for ie = 1 : length(epsilons)
             epsilon = epsilons(ie);
                 % Run Monte Carlo and compute CDFs (skipping first 1000 steps)
+                lambdas = (ones(1, N)  + nu * 2 * (rand(1, N) - 0.5)) * lambda;
                 [aoi, aoii] = montecarlo(L, N, ones(1, N) * lambda, epsilon, algo, K, p1, p2);
                 aoi = aoi(:, 1001 : L);
                 aoii = aoii(:, 1001 : L);
